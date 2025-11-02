@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Postgres Backup UI</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <header class="hero">
+        <div>
+          <h1>🐘 Postgres Backup & Restore</h1>
+          <p>Safely manage Postgres backups straight from your browser.</p>
+        </div>
+        <button id="refresh-btn" class="ghost-btn" aria-label="Refresh backups">
+          ⟳ Refresh
+        </button>
+      </header>
+
+      <section class="card" aria-labelledby="container-heading">
+        <div class="card-header">
+          <h2 id="container-heading">Container Status</h2>
+          <span id="container-status" class="badge badge-warning">Checking...</span>
+        </div>
+        <div class="card-body">
+          <p class="status-line">
+            <span class="label">Active container:</span>
+            <span id="container-name">Detecting...</span>
+          </p>
+          <p id="container-message" class="muted">
+            We will auto-detect any running Postgres containers.
+          </p>
+          <div class="actions-row">
+            <button id="detect-btn" class="ghost-btn">🔍 Re-detect</button>
+          </div>
+        </div>
+        <form id="container-form" class="form-grid" autocomplete="off">
+          <h3>Launch a container</h3>
+          <div class="form-field">
+            <label for="container-name-input">Container name</label>
+            <input
+              type="text"
+              id="container-name-input"
+              name="containerName"
+              placeholder="postgres-backup-db"
+              required
+              minlength="3"
+            />
+          </div>
+          <div class="form-field">
+            <label for="container-password-input">Postgres password</label>
+            <input
+              type="password"
+              id="container-password-input"
+              name="containerPassword"
+              placeholder="SuperSecret123!"
+              required
+            />
+          </div>
+          <div class="form-field">
+            <label for="container-port-input">Host port</label>
+            <input
+              type="number"
+              id="container-port-input"
+              name="containerPort"
+              placeholder="5433"
+              min="1024"
+              max="65535"
+              required
+            />
+          </div>
+          <div class="form-field">
+            <label for="container-backup-select">Bootstrap from backup (optional)</label>
+            <select id="container-backup-select" name="containerBackup">
+              <option value="">Start with an empty database</option>
+            </select>
+            <p id="container-backup-help" class="help-text">
+              We will restore this backup into the new container once it is ready.
+            </p>
+          </div>
+          <button id="launch-btn" type="submit" class="primary-btn">
+            🚀 Launch or start container
+          </button>
+        </form>
+      </section>
+
+      <section class="card" aria-labelledby="backups-heading">
+        <div class="card-header">
+          <h2 id="backups-heading">Backups</h2>
+          <span id="backup-summary" class="muted">Loading...</span>
+        </div>
+
+        <div class="backup-controls">
+          <select id="database-select" aria-label="Database to back up from"></select>
+          <button id="backup-btn" class="primary-btn">📦 Take Backup</button>
+        </div>
+
+        <p id="backup-selection-info" class="muted"></p>
+
+        <ul id="backups" class="backup-list" aria-live="polite"></ul>
+      </section>
+    </div>
+
+    <div id="toast" class="toast hidden" role="status" aria-live="polite">
+      <span id="toast-message"></span>
+    </div>
+
+    <script src="script.js" type="module"></script>
+  </body>
+</html>
