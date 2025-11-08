@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm start)",
+      "Bash(copy:*)",
+      "Bash(del:*)",
+      "Bash(npm install:*)",
+      "Bash(if not exist backups mkdir backups)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

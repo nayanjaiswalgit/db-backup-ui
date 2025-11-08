@@ -4,6 +4,9 @@ node_modules/
 # Backup files
 backups/
 
+# Kubeconfig files (contain cluster credentials)
+kubeconfigs/
+
 # Environment variables
 .env
 .env.local
