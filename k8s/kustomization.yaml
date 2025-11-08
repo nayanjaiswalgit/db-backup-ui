@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: db-backup-platform
+
+resources:
+  - namespace.yaml
+  - postgres.yaml
+  - redis.yaml
+  - minio.yaml
+  - backend.yaml
+  - celery.yaml
+  - frontend.yaml
+  - ingress.yaml

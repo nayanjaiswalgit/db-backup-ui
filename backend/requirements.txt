@@ -1,0 +1,82 @@
+# FastAPI and core dependencies
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.25
+alembic==1.13.1
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+
+# Redis and Caching
+redis==5.0.1
+hiredis==2.3.2
+
+# Celery for task queue
+celery==5.3.6
+celery[redis]==5.3.6
+
+# Authentication and Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-dotenv==1.0.1
+cryptography==42.0.0
+
+# Validation
+pydantic==2.5.3
+pydantic-settings==2.1.0
+email-validator==2.1.0
+
+# HTTP Client
+httpx==0.26.0
+aiohttp==3.9.1
+
+# S3 Storage
+boto3==1.34.34
+aioboto3==12.3.0
+
+# SSH and Remote Execution
+paramiko==3.4.0
+fabric==3.2.2
+
+# Database Clients
+pymongo==4.6.1
+pymysql==1.1.0
+motor==3.3.2
+
+# Docker SDK
+docker==7.0.0
+
+# Kubernetes Client
+kubernetes==29.0.0
+
+# Monitoring and Logging
+structlog==24.1.0
+python-json-logger==2.0.7
+
+# Email
+aiosmtplib==3.0.1
+jinja2==3.1.3
+
+# WebSocket
+python-socketio==5.11.0
+
+# Utils
+python-crontab==3.0.0
+pytz==2023.3
+croniter==2.0.1
+
+# Data Processing
+pandas==2.1.4
+
+# Testing
+pytest==7.4.4
+pytest-asyncio==0.23.3
+pytest-cov==4.1.0
+httpx-test==0.21.1
+
+# Development
+black==23.12.1
+flake8==7.0.0
+mypy==1.8.0

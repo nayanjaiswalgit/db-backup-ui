@@ -1,0 +1,166 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: dbbackup-postgres
+    environment:
+      POSTGRES_DB: dbbackup
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dbbackup-network
+
+  # Redis for caching and Celery
+  redis:
+    image: redis:7-alpine
+    container_name: dbbackup-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dbbackup-network
+
+  # MinIO for S3-compatible storage
+  minio:
+    image: minio/minio:latest
+    container_name: dbbackup-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - dbbackup-network
+
+  # FastAPI backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dbbackup-backend
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/dbbackup
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/2
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - S3_ENDPOINT=http://minio:9000
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - SECRET_KEY=your-super-secret-key-change-in-production
+      - ENCRYPTION_KEY=pWl3Jh9fZ2kL7mN4qR8tY6uX5vB1cD0eF2gH4iJ6kM8=
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./backend/app:/app/app
+      - backup_temp:/tmp/backups
+    networks:
+      - dbbackup-network
+    restart: unless-stopped
+
+  # Celery worker
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dbbackup-celery-worker
+    command: celery -A app.celery.celery_app worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/dbbackup
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/2
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - S3_ENDPOINT=http://minio:9000
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - SECRET_KEY=your-super-secret-key-change-in-production
+      - ENCRYPTION_KEY=pWl3Jh9fZ2kL7mN4qR8tY6uX5vB1cD0eF2gH4iJ6kM8=
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    volumes:
+      - ./backend/app:/app/app
+      - backup_temp:/tmp/backups
+    networks:
+      - dbbackup-network
+    restart: unless-stopped
+
+  # Celery beat scheduler
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dbbackup-celery-beat
+    command: celery -A app.celery.celery_app beat --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/dbbackup
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/2
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - SECRET_KEY=your-super-secret-key-change-in-production
+      - ENCRYPTION_KEY=pWl3Jh9fZ2kL7mN4qR8tY6uX5vB1cD0eF2gH4iJ6kM8=
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend/app:/app/app
+    networks:
+      - dbbackup-network
+    restart: unless-stopped
+
+  # React frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: dbbackup-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - dbbackup-network
+    restart: unless-stopped
+
+networks:
+  dbbackup-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  backup_temp:
