@@ -13,6 +13,11 @@ from app.core.logging_config import setup_logging
 from app.api.v1.router import api_router
 from app.db.session import engine
 from app.db.base import Base
+from app.middleware.security import (
+    SecurityHeadersMiddleware,
+    RateLimitMiddleware,
+    AuthRateLimitMiddleware
+)
 
 # Setup logging
 setup_logging()
@@ -47,7 +52,25 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Add middleware
+# Add middleware (order matters - added in reverse order of execution)
+# Security headers - added last, executed first
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Authentication rate limiting - stricter limits for auth endpoints
+app.add_middleware(
+    AuthRateLimitMiddleware,
+    max_attempts=5,          # Max 5 login attempts
+    window_minutes=15        # Within 15 minutes
+)
+
+# General rate limiting - prevents abuse
+app.add_middleware(
+    RateLimitMiddleware,
+    requests_per_minute=60,  # 60 requests per minute per IP
+    burst=10                 # Allow burst of 10 requests
+)
+
+# CORS - allow cross-origin requests from frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -55,6 +78,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# GZip compression - reduce response sizes
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 

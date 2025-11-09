@@ -3,7 +3,9 @@ Application configuration using Pydantic Settings
 """
 from typing import List
 from pydantic_settings import BaseSettings
-from pydantic import validator, Field
+from pydantic import validator, Field, field_validator
+import os
+import secrets
 
 
 class Settings(BaseSettings):
@@ -37,6 +39,38 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_EXPIRE_DAYS: int = 7
+
+    @validator("SECRET_KEY")
+    def validate_secret_key(cls, v):
+        """Ensure SECRET_KEY is strong and not using default value"""
+        if not v or len(v) < 32:
+            raise ValueError("SECRET_KEY must be at least 32 characters long")
+
+        # Check for common weak values
+        weak_keys = [
+            "changeme",
+            "secret",
+            "password",
+            "your-secret-key-here",
+            "insecure-secret-key",
+            "default"
+        ]
+        if v.lower() in weak_keys:
+            raise ValueError("SECRET_KEY cannot be a common/default value. Generate a strong random key.")
+
+        return v
+
+    @validator("ENCRYPTION_KEY")
+    def validate_encryption_key(cls, v):
+        """Ensure ENCRYPTION_KEY is properly formatted"""
+        if not v or len(v) < 32:
+            raise ValueError("ENCRYPTION_KEY must be at least 32 characters (Fernet key)")
+
+        # For Fernet, key should be 44 characters base64
+        if len(v) != 44:
+            raise ValueError("ENCRYPTION_KEY must be a valid Fernet key (44 characters base64)")
+
+        return v
 
     # CORS
     CORS_ORIGINS: List[str] = Field(default_factory=list)

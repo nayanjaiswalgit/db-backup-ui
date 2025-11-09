@@ -9,9 +9,17 @@ import paramiko
 import docker
 from kubernetes import client, config
 from io import StringIO
+import shlex
 
 from app.models.server import ServerType
 from app.core.security import decrypt_data
+from app.core.validation import (
+    validate_hostname,
+    validate_port,
+    validate_container_name,
+    validate_namespace,
+    ValidationError
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +37,14 @@ class SSHExecutor:
     """Execute commands via SSH"""
 
     def __init__(self, host: str, port: int, credentials: Dict[str, Any]):
-        self.host = host
-        self.port = port or 22
+        # Validate inputs to prevent injection attacks
+        try:
+            self.host = validate_hostname(host)
+            self.port = validate_port(port or 22)
+        except ValidationError as e:
+            logger.error(f"Invalid SSH parameters: {e}")
+            raise ValueError(f"Invalid SSH parameters: {e}")
+
         self.username = credentials.get("username")
         self.password = credentials.get("password")
         self.ssh_key = credentials.get("ssh_key")
@@ -72,13 +86,64 @@ class SSHExecutor:
             logger.error(f"SSH connection failed to {self.host}: {e}")
             return False
 
+    def _validate_command(self, command: str) -> None:
+        """
+        Validate command for security.
+        Whitelist approach for allowed commands.
+        """
+        if not command or not command.strip():
+            raise ValidationError("Command cannot be empty")
+
+        # Whitelist of allowed command prefixes for DB backup operations
+        allowed_prefixes = [
+            'pg_dump', 'pg_restore', 'pg_basebackup', 'psql',
+            'mysqldump', 'mysql',
+            'mongodump', 'mongorestore',
+            'redis-cli',
+            'tar', 'gzip', 'gunzip', 'zstd', 'lz4',
+            'cat', 'ls', 'mkdir', 'rm', 'cp', 'mv',
+            'du', 'df', 'which', 'echo', 'test',
+        ]
+
+        command_base = command.strip().split()[0]
+
+        # Check if command starts with allowed prefix
+        if not any(command_base.startswith(prefix) for prefix in allowed_prefixes):
+            logger.warning(f"Command not in whitelist: {command_base}")
+            raise ValidationError(f"Command not allowed: {command_base}")
+
+        # Check for command chaining attempts
+        dangerous_patterns = [';', '|', '&', '\n', '\r', '$(', '`']
+        # Allow pipes for specific safe cases like pg_dump | gzip
+        safe_pipes = ['gzip', 'gunzip', 'zstd', 'lz4']
+        if '|' in command:
+            parts = command.split('|')
+            for part in parts[1:]:  # Check piped commands
+                piped_cmd = part.strip().split()[0]
+                if not any(piped_cmd.startswith(safe) for safe in safe_pipes):
+                    raise ValidationError(f"Unsafe pipe command: {piped_cmd}")
+
+        # Check for other dangerous patterns
+        for pattern in [';', '&', '\n', '\r', '$(', '`']:
+            if pattern in command:
+                raise ValidationError(f"Command contains dangerous pattern: {pattern}")
+
     async def execute(self, command: str, timeout: int = 300) -> ExecutionResult:
-        """Execute command via SSH"""
+        """Execute command via SSH with security validation"""
+        # Validate command before execution
+        try:
+            self._validate_command(command)
+        except ValidationError as e:
+            logger.error(f"Command validation failed: {e}")
+            return ExecutionResult(False, stderr=f"Command validation failed: {e}")
+
         if not self.client:
             if not await self.connect():
                 return ExecutionResult(False, stderr="Connection failed")
 
         try:
+            logger.info(f"Executing SSH command: {command[:100]}...")  # Log first 100 chars
+
             stdin, stdout, stderr = await asyncio.to_thread(
                 self.client.exec_command,
                 command,
@@ -132,13 +197,60 @@ class DockerExecutor:
     """Execute commands in Docker containers"""
 
     def __init__(self, host: str, credentials: Dict[str, Any]):
-        self.host = host
+        # Validate host
+        try:
+            self.host = validate_hostname(host) if host != "localhost" else "localhost"
+        except ValidationError as e:
+            logger.error(f"Invalid Docker host: {e}")
+            raise ValueError(f"Invalid Docker host: {e}")
+
         base_url = f"tcp://{host}:2375" if host != "localhost" else "unix://var/run/docker.sock"
         self.client = docker.DockerClient(base_url=base_url)
 
+    def _validate_command(self, command: str) -> None:
+        """Validate Docker exec command"""
+        if not command or not command.strip():
+            raise ValidationError("Command cannot be empty")
+
+        # Similar whitelist as SSH but for Docker context
+        allowed_prefixes = [
+            'pg_dump', 'pg_restore', 'psql',
+            'mysqldump', 'mysql',
+            'mongodump', 'mongorestore',
+            'redis-cli',
+            'tar', 'gzip', 'gunzip', 'zstd', 'lz4',
+            'cat', 'ls', 'echo', 'sh', 'bash',  # sh/bash needed for Docker exec
+        ]
+
+        if isinstance(command, str):
+            command_base = command.strip().split()[0]
+        elif isinstance(command, list):
+            command_base = command[0] if command else ""
+        else:
+            raise ValidationError("Invalid command format")
+
+        if not any(command_base.startswith(prefix) for prefix in allowed_prefixes):
+            raise ValidationError(f"Command not allowed: {command_base}")
+
+        # Check for dangerous patterns in string commands
+        if isinstance(command, str):
+            for pattern in [';', '&', '\n', '\r', '$(', '`']:
+                if pattern in command and pattern != '|':  # Allow pipes for compression
+                    raise ValidationError(f"Command contains dangerous pattern: {pattern}")
+
     async def execute(self, container: str, command: str) -> ExecutionResult:
-        """Execute command in Docker container"""
+        """Execute command in Docker container with validation"""
+        # Validate container name
         try:
+            validate_container_name(container)
+            self._validate_command(command)
+        except ValidationError as e:
+            logger.error(f"Docker validation failed: {e}")
+            return ExecutionResult(False, stderr=f"Validation failed: {e}")
+
+        try:
+            logger.info(f"Executing Docker command in {container}: {str(command)[:100]}...")
+
             container_obj = await asyncio.to_thread(
                 self.client.containers.get,
                 container
@@ -209,6 +321,31 @@ class KubernetesExecutor:
             logger.error(f"Failed to initialize Kubernetes client: {e}")
             raise
 
+    def _validate_command(self, command: List[str]) -> None:
+        """Validate Kubernetes exec command"""
+        if not command or not isinstance(command, list):
+            raise ValidationError("Command must be a non-empty list")
+
+        # Whitelist allowed commands
+        allowed_prefixes = [
+            'pg_dump', 'pg_restore', 'psql',
+            'mysqldump', 'mysql',
+            'mongodump', 'mongorestore',
+            'redis-cli',
+            'tar', 'gzip', 'gunzip', 'zstd', 'lz4',
+            'cat', 'ls', 'echo', 'sh', 'bash',
+        ]
+
+        command_base = command[0]
+        if not any(command_base.startswith(prefix) for prefix in allowed_prefixes):
+            raise ValidationError(f"Command not allowed: {command_base}")
+
+        # Check command arguments for injection attempts
+        for arg in command:
+            for pattern in [';', '&', '$(', '`', '\n', '\r']:
+                if pattern in str(arg):
+                    raise ValidationError(f"Command argument contains dangerous pattern: {pattern}")
+
     async def execute(
         self,
         namespace: str,
@@ -216,9 +353,21 @@ class KubernetesExecutor:
         command: List[str],
         container: Optional[str] = None
     ) -> ExecutionResult:
-        """Execute command in Kubernetes pod"""
+        """Execute command in Kubernetes pod with validation"""
+        # Validate inputs
+        try:
+            validate_namespace(namespace)
+            self._validate_command(command)
+            if container:
+                validate_container_name(container)
+        except ValidationError as e:
+            logger.error(f"Kubernetes validation failed: {e}")
+            return ExecutionResult(False, stderr=f"Validation failed: {e}")
+
         try:
             from kubernetes.stream import stream
+
+            logger.info(f"Executing K8s command in {namespace}/{pod}: {command}")
 
             resp = await asyncio.to_thread(
                 stream,
