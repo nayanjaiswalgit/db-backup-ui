@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
 import Layout from './components/Layout'
+import LogViewer from './components/LogViewer'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Servers from './pages/Servers'
@@ -17,6 +18,8 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+
   return (
     <Router>
       <Routes>
@@ -39,6 +42,9 @@ function App() {
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
+
+      {/* Global Log Viewer - only show when authenticated */}
+      {isAuthenticated && <LogViewer />}
     </Router>
   )
 }
