@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useWebSocket } from '../hooks/useWebSocket'
 
 interface BackupProgress {
@@ -26,7 +26,7 @@ export function useRealtimeUpdates() {
   const [serverHealth, setServerHealth] = useState<Map<number, ServerHealth>>(new Map())
   const [notifications, setNotifications] = useState<Notification[]>([])
 
-  const { isConnected, lastMessage } = useWebSocket('/api/v1/ws', {
+  const { isConnected } = useWebSocket('/api/v1/ws', {
     onMessage: (message) => {
       switch (message.type) {
         case 'backup_progress':

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useWebSocket } from '../hooks/useWebSocket'
 import { Terminal, X } from 'lucide-react'
 
@@ -14,10 +14,10 @@ export default function LogViewer() {
   const [isOpen, setIsOpen] = useState(false)
   const [filter, setFilter] = useState<string>('all')
 
-  const { isConnected, lastMessage } = useWebSocket('/api/v1/ws/logs', {
+  const { isConnected } = useWebSocket('/api/v1/ws/logs', {
     onMessage: (message) => {
-      if (message.type === 'log') {
-        setLogs((prev) => [...prev.slice(-99), message as LogEntry])
+      if (message.type === 'log' && 'timestamp' in message && 'level' in message && 'message' in message && 'source' in message) {
+        setLogs((prev) => [...prev.slice(-99), message as unknown as LogEntry])
       }
     },
   })

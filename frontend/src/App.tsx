@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useAuthStore } from './stores/authStore'
 import Layout from './components/Layout'
 import LogViewer from './components/LogViewer'
+import { Toaster } from './components/ui/toaster'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Servers from './pages/Servers'
@@ -45,6 +46,9 @@ function App() {
 
       {/* Global Log Viewer - only show when authenticated */}
       {isAuthenticated && <LogViewer />}
+
+      {/* Global Toast Notifications */}
+      <Toaster />
     </Router>
   )
 }
