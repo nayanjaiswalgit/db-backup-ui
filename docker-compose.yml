@@ -1,5 +1,11 @@
 version: '3.8'
 
+# ⚠️  SECURITY WARNING ⚠️
+# This docker-compose.yml file contains EXAMPLE credentials for development only.
+# NEVER use these credentials in production! Change all passwords, keys, and secrets
+# before deploying to any non-development environment.
+# See backend/.env.example for secure credential generation instructions.
+
 services:
   # PostgreSQL database
   postgres:

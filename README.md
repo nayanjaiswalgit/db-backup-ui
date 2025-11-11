@@ -45,8 +45,8 @@ Enterprise-grade platform for managing database backups and restores across mult
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/db-backup-platform.git
-cd db-backup-platform
+git clone https://github.com/nayanjaiswalgit/db-backup-ui.git
+cd db-backup-ui
 
 # Start all services
 docker-compose up -d
@@ -130,7 +130,7 @@ npm run dev
 
 ## Architecture
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed system architecture, data flow, and design decisions.
+See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed system architecture, data flow, and design decisions.
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
@@ -524,21 +524,37 @@ kubectl create secret generic backend-secret \
 
 ## Contributing
 
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+Quick steps:
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
 4. Add tests
 5. Submit a pull request
 
+Please also read our [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details
 
+## Documentation
+
+- **Quick Start**: This README
+- **Architecture**: [ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **Deployment Guide**: [DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- **Usage Guide**: [USAGE_GUIDE.md](docs/USAGE_GUIDE.md)
+- **API Schema**: [API_SCHEMA.md](docs/API_SCHEMA.md)
+- **Security**: [SECURITY.md](SECURITY.md)
+- **Practical Scenarios**: [PRACTICAL_SCENARIOS.md](docs/PRACTICAL_SCENARIOS.md)
+- **K3s Setup**: [K3S_SETUP.md](docs/K3S_SETUP.md)
+
 ## Support
 
-- **Documentation**: [Full documentation](https://docs.example.com)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/db-backup-platform/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/db-backup-platform/discussions)
+- **Issues**: [GitHub Issues](https://github.com/nayanjaiswalgit/db-backup-ui/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/nayanjaiswalgit/db-backup-ui/discussions)
+- **Security Issues**: See [SECURITY.md](SECURITY.md)
 
 ## Roadmap
 

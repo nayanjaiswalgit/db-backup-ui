@@ -15,8 +15,8 @@ Comprehensive guide for deploying the DB Backup Platform in various environments
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/yourusername/db-backup-platform.git
-cd db-backup-platform
+git clone https://github.com/nayanjaiswalgit/db-backup-ui.git
+cd db-backup-ui
 ```
 
 2. **Configure environment:**
@@ -262,7 +262,7 @@ EOF
 3. **Clone and configure backend:**
 ```bash
 cd /opt
-sudo git clone https://github.com/yourusername/db-backup-platform.git
+sudo git clone https://github.com/nayanjaiswalgit/db-backup-ui.git
 sudo chown -R $(whoami):$(whoami) db-backup-platform
 cd db-backup-platform/backend
 
