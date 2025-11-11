@@ -319,24 +319,6 @@ curl -X GET http://localhost:8000/api/v1/servers \
 - **Notifications**: `/api/v1/notifications/*` - Notification channels
 - **Audit**: `/api/v1/audit/*` - Audit logs
 
-## Database Schema
-
-The platform uses PostgreSQL with the following main tables:
-
-- `users` - User accounts and authentication
-- `api_keys` - API key management
-- `servers` - Registered servers
-- `server_groups` - Server grouping
-- `backups` - Backup metadata
-- `backup_metadata` - Extended backup information
-- `schedules` - Backup schedules
-- `retention_policies` - Retention policy definitions
-- `commands` - Command templates
-- `command_executions` - Command execution history
-- `notification_channels` - Notification configurations
-- `notifications` - Notification log
-- `audit_logs` - Audit trail
-
 ## Security Best Practices
 
 1. **Change default credentials** immediately after deployment
@@ -350,177 +332,14 @@ The platform uses PostgreSQL with the following main tables:
 9. **Secure S3 storage** with proper IAM policies
 10. **Keep dependencies updated** regularly
 
-## Monitoring & Logging
+## Monitoring & Health Checks
 
-### Health Checks
+- **Backend Health**: http://localhost:8000/health
+- **Frontend Health**: http://localhost:3000/health
+- **Logs**: `docker-compose logs -f` (structured JSON format)
+- **Metrics**: Backup rates, server health, storage utilization, API response times
 
-- **Backend**: http://localhost:8000/health
-- **Frontend**: http://localhost:3000/health
-
-### Metrics
-
-The platform exposes metrics for monitoring:
-
-- Backup success/failure rates
-- Server health status
-- Storage utilization
-- API response times
-- Worker queue length
-
-### Logging
-
-Logs are structured in JSON format for easy parsing:
-
-```bash
-# View backend logs
-docker-compose logs -f backend
-
-# View Celery worker logs
-docker-compose logs -f celery-worker
-
-# View all logs
-docker-compose logs -f
-```
-
-## Backup Types Explained
-
-### Full Backup
-Complete snapshot of the entire database. Recommended for daily/weekly schedules.
-
-### Incremental Backup
-Only backs up data changed since the last backup (full or incremental). Faster but requires all previous backups for restore.
-
-### Differential Backup
-Backs up data changed since the last full backup. Restore requires only the last full backup and the differential.
-
-## Retention Policies
-
-Retention policies automatically clean up old backups based on rules:
-
-- **Keep last N backups**: Keep the most recent N backups
-- **Keep for N days**: Keep backups newer than N days
-- **Keep daily/weekly/monthly**: Keep 1 backup per day/week/month for N periods
-
-Example policy:
-- Keep last 7 daily backups
-- Keep last 4 weekly backups
-- Keep last 12 monthly backups
-- Delete everything else
-
-## Troubleshooting
-
-### Backend won't start
-
-```bash
-# Check database connection
-docker-compose logs postgres
-
-# Check Redis connection
-docker-compose logs redis
-
-# Verify environment variables
-docker-compose config
-```
-
-### Backups failing
-
-```bash
-# Check Celery worker logs
-docker-compose logs celery-worker
-
-# Verify S3/MinIO access
-docker-compose logs minio
-
-# Test server connectivity
-curl -X POST http://localhost:8000/api/v1/servers/1/test-connection
-```
-
-### Frontend can't connect to backend
-
-```bash
-# Check CORS settings in backend/.env
-CORS_ORIGINS=http://localhost:3000
-
-# Verify backend is running
-curl http://localhost:8000/health
-```
-
-## Development
-
-### Running Tests
-
-```bash
-# Backend tests
-cd backend
-pytest
-
-# Frontend tests
-cd frontend
-npm test
-```
-
-### Code Quality
-
-```bash
-# Backend linting
-cd backend
-black app/
-flake8 app/
-mypy app/
-
-# Frontend linting
-cd frontend
-npm run lint
-```
-
-### Database Migrations
-
-```bash
-# Create a new migration
-cd backend
-alembic revision --autogenerate -m "Add new field"
-
-# Apply migrations
-alembic upgrade head
-
-# Rollback last migration
-alembic downgrade -1
-```
-
-## Production Deployment
-
-### Docker Compose Production
-
-1. Update `docker-compose.yml` with production settings
-2. Set strong passwords and keys in `.env`
-3. Configure proper storage volumes
-4. Set up SSL/TLS certificates
-5. Configure firewall rules
-
-### Kubernetes/K3s Production
-
-1. Update K8s manifests with production settings
-2. Create secrets for sensitive data:
-```bash
-kubectl create secret generic backend-secret \
-  --from-literal=SECRET_KEY=your-secret-key \
-  --from-literal=ENCRYPTION_KEY=your-encryption-key \
-  -n db-backup-platform
-```
-3. Configure Ingress with TLS
-4. Set up persistent volumes
-5. Configure resource limits
-6. Set up monitoring and alerting
-
-### Bare Metal Production
-
-1. Install Python 3.11+ and Node.js 20+
-2. Install PostgreSQL 15+ and Redis 7+
-3. Configure nginx as reverse proxy
-4. Set up systemd services for auto-start
-5. Configure SSL certificates
-6. Set up log rotation
-7. Configure backup of the platform itself
+For detailed monitoring setup, troubleshooting, and production deployment, see [DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Contributing
 
@@ -542,13 +361,11 @@ MIT License - see [LICENSE](LICENSE) file for details
 ## Documentation
 
 - **Quick Start**: This README
-- **Architecture**: [ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- **Deployment Guide**: [DEPLOYMENT.md](docs/DEPLOYMENT.md)
-- **Usage Guide**: [USAGE_GUIDE.md](docs/USAGE_GUIDE.md)
-- **API Schema**: [API_SCHEMA.md](docs/API_SCHEMA.md)
-- **Security**: [SECURITY.md](SECURITY.md)
-- **Practical Scenarios**: [PRACTICAL_SCENARIOS.md](docs/PRACTICAL_SCENARIOS.md)
-- **K3s Setup**: [K3S_SETUP.md](docs/K3S_SETUP.md)
+- **Architecture**: [ARCHITECTURE.md](docs/ARCHITECTURE.md) - System design and components
+- **Deployment**: [DEPLOYMENT.md](docs/DEPLOYMENT.md) - Docker, Kubernetes/K3s, and bare-metal
+- **Usage Guide**: [USAGE_GUIDE.md](docs/USAGE_GUIDE.md) - Complete feature walkthrough
+- **API Reference**: [API_SCHEMA.md](docs/API_SCHEMA.md) - REST API documentation
+- **Security**: [SECURITY.md](SECURITY.md) - Security features and best practices
 
 ## Support
 
