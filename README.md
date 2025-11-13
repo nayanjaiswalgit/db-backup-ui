@@ -7,6 +7,40 @@ Enterprise-grade platform for managing database backups and restores across mult
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![React](https://img.shields.io/badge/react-18-blue.svg)
 
+## 🚀 Getting Started
+
+**New to this project? Start here!**
+
+### Automated Setup (Easiest)
+
+```bash
+# Run the automated setup script
+./setup.sh
+```
+
+This script will:
+- Check if Docker is installed
+- Offer to install Docker if needed
+- Create necessary configuration files
+- Start all services
+- Verify everything is running
+
+### Manual Setup
+
+If you prefer manual setup or Docker is not installed:
+
+1. **If Docker is not installed**: See [QUICK_START.md](QUICK_START.md) for installation instructions
+2. **If Docker is installed**:
+   ```bash
+   docker compose up -d
+   ```
+
+### Alternative: Run Without Docker
+
+See [QUICK_START.md](QUICK_START.md) Option 3 for running locally with Python, Node.js, PostgreSQL, and Redis.
+
+---
+
 ## Features
 
 ### Core Capabilities
