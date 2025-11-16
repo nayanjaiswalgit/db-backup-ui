@@ -78,7 +78,7 @@ pandas==2.1.4
 pytest==7.4.4
 pytest-asyncio==0.23.3
 pytest-cov==4.1.0
-httpx-test==0.21.1
+pytest-httpx==0.21.1
 
 # Development
 black==23.12.1
