@@ -5,23 +5,27 @@ updates:
     directories: ["/"]
     schedule: { interval: weekly }
     open-pull-requests-limit: 0 # no version-update PRs
+    rebase-strategy: auto
     groups:
       security: { applies-to: security-updates, patterns: ["*"] }
   - package-ecosystem: pip
     directories: ["/backend"]
     schedule: { interval: weekly }
     open-pull-requests-limit: 0 # no version-update PRs
+    rebase-strategy: auto
     groups:
       security: { applies-to: security-updates, patterns: ["*"] }
   - package-ecosystem: docker
     directories: ["/backend", "/frontend"]
     schedule: { interval: weekly }
     open-pull-requests-limit: 0 # no version-update PRs
+    rebase-strategy: auto
     groups:
       security: { applies-to: security-updates, patterns: ["*"] }
   - package-ecosystem: npm
     directories: ["/frontend", "/"]
     schedule: { interval: weekly }
     open-pull-requests-limit: 0 # no version-update PRs
+    rebase-strategy: auto
     groups:
       security: { applies-to: security-updates, patterns: ["*"] }
